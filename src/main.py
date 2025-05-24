@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-VRChat Webcam Tracker - Command Line Version
+VRChat Webcam Tracker
 
 Basic usage:
     python -m vrchat_webcam_tracker.cli
