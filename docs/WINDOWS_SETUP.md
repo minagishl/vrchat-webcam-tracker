@@ -1,37 +1,49 @@
-# VRChat Webcam Tracker - macOS Setup Guide
+# VRChat Webcam Tracker - Windows Setup Guide
 
 ## Prerequisites
 
-- macOS 10.15 (Catalina) or later
-- Python 3.8 or higher (will be installed automatically with uv)
+- Windows 10 or later
+- Python 3.9 or higher (will be installed automatically with uv)
 - Webcam
 - VRChat (with OSC functionality enabled)
 
 ## Installation
 
-### Using Terminal
+### Option 1: Using Command Prompt (Recommended)
 
-1. Open **Terminal**
+1. Open **Command Prompt** as Administrator (optional, but recommended)
 2. Navigate to the project directory
 3. Run the setup script:
 
-```bash
-scripts/setup.sh
+```cmd
+scripts\setup.bat
+```
+
+### Option 2: Using PowerShell
+
+1. Open **PowerShell** as Administrator (optional, but recommended)
+2. Navigate to the project directory
+3. If you encounter execution policy issues, run:
+
+```powershell
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+```
+
+4. Run the setup script:
+
+```powershell
+scripts\setup.ps1
 ```
 
 ## Running the Application
 
 ### Quick Start
 
-Double-click `scripts/run.sh` to start the tracker with default settings, or run in Terminal:
-
-```bash
-./scripts/run.sh
-```
+Double-click `scripts\run.bat` to start the tracker with default settings.
 
 ### Command Line Usage
 
-```bash
+```cmd
 # Basic usage
 uv run python src/main.py
 
@@ -50,34 +62,26 @@ uv run python src/main.py --camera 1
 
 ### Testing OSC Connection
 
-```bash
+```cmd
 # Test OSC functionality without camera
 uv run python src/osc_test.py
 ```
 
 ## Camera Access
 
-### macOS Camera Privacy Settings
+### Windows Camera Privacy Settings
 
-1. Open **System Preferences** (or **System Settings** on macOS Ventura+)
-2. Click **Security & Privacy** → **Privacy** → **Camera**
-3. Check the box for **Terminal** or **Python**
-4. If the app isn't listed, you may need to manually add it or run the application first
-
-### Manually Request Camera Access Permission
-
-Run the following command in Terminal to reset camera permissions:
-
-```bash
-# Reset camera access permission
-tccutil reset Camera
-```
+1. Open **Settings** (Windows key + I)
+2. Go to **Privacy & security** → **Camera**
+3. Ensure **Camera access** is turned on
+4. Ensure **Let apps access your camera** is turned on
+5. Ensure **Let desktop apps access your camera** is turned on
 
 ### Multiple Cameras
 
 If you have multiple cameras, you can specify which one to use:
 
-```bash
+```cmd
 # Try different camera indices
 uv run python src/main.py --camera 0  # Default
 uv run python src/main.py --camera 1  # Second camera
@@ -91,14 +95,14 @@ uv run python src/main.py --camera 2  # Third camera
 **uv not found error:**
 
 - The setup script will provide installation instructions
-- Install uv manually: `curl -LsSf https://astral.sh/uv/install.sh | sh`
-- Or download from: https://github.com/astral-sh/uv/releases
+- Download uv from: https://github.com/astral-sh/uv/releases
+- Or use the PowerShell installation command provided in the setup script
 
 **Dependencies installation failed:**
 
+- Run Command Prompt as Administrator
 - Ensure you have a stable internet connection
 - Try running `uv sync` manually
-- Check if you have proper permissions
 
 ### Camera Issues
 
@@ -106,25 +110,25 @@ uv run python src/main.py --camera 2  # Third camera
 
 1. **Check if camera is in use by other applications**
 
-   - Close FaceTime, Zoom, Teams, browsers with camera access, etc.
-   - Use Activity Monitor to check for applications using the camera
+   - Close Skype, Teams, OBS, browsers with camera access, etc.
+   - Use Task Manager to check for applications using the camera
 
 2. **Try different camera indices**
 
-   ```bash
+   ```cmd
    uv run python src/main.py --camera 1
    uv run python src/main.py --camera 2
    ```
 
-3. **Check macOS Camera Privacy Settings** (see Camera Access section above)
+3. **Check Windows Camera Privacy Settings** (see Camera Access section above)
 
 4. **Restart your computer** - Sometimes required after camera permission changes
 
 **Camera detected but no video:**
 
-- Check camera permissions in System Preferences
-- Test camera with Photo Booth or FaceTime
-- Restart the Terminal application
+- Check camera drivers in Device Manager
+- Update camera drivers
+- Test camera with Windows Camera app
 
 ### OSC Connection Issues
 
@@ -136,15 +140,15 @@ uv run python src/main.py --camera 2  # Third camera
    - Settings → OSC → Enable OSC
    - Verify port is set to 9000
 
-2. **Check macOS Firewall:**
+2. **Check Windows Firewall:**
 
-   - System Preferences → Security & Privacy → Firewall
-   - If enabled, add exception for Python or the application
+   - Windows Defender Firewall might block the connection
+   - Add exception for Python or the application
 
 3. **Network connectivity:**
-   ```bash
-   # Test if port is accessible
-   nc -zv 127.0.0.1 9000
+   ```cmd
+   # Test if port is accessible (requires telnet)
+   telnet 127.0.0.1 9000
    ```
 
 ### Performance Issues
@@ -187,47 +191,35 @@ EYEBROW_THRESHOLD = 0.01  # Eyebrow raise threshold
 
 To run the tracker in the background without a display window:
 
-```bash
+```cmd
 uv run python src/main.py --no-display
 ```
 
 ### Custom Scripts
 
-Create your own shell scripts for different configurations:
+Create your own batch files for different configurations:
 
-**gaming.sh:**
+**gaming.bat:**
 
-```bash
-#!/bin/bash
+```cmd
+@echo off
 uv run python src/main.py --no-display --ip 127.0.0.1
 ```
 
-**debug.sh:**
+**debug.bat:**
 
-```bash
-#!/bin/bash
+```cmd
+@echo off
 uv run python src/main.py --debug --camera 1
 ```
 
-Make scripts executable:
+### Startup on Boot
 
-```bash
-chmod +x gaming.sh debug.sh
-```
-
-### Startup on Login
-
-1. Open **System Preferences** → **Users & Groups**
-2. Select your user account
-3. Click **Login Items**
-4. Click **+** and add your script or the `scripts/run.sh` file
-
-Alternatively, create a LaunchAgent:
-
-```bash
-# Create a launch agent file
-~/Library/LaunchAgents/com.vrchat-webcam-tracker.plist
-```
+1. Create a shortcut to `scripts\run.bat`
+2. Place the shortcut in:
+   ```
+   %APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup
+   ```
 
 ## Getting Help
 
@@ -237,4 +229,4 @@ If you encounter issues:
 2. Run with `--debug` flag to see detailed output
 3. Check camera and OSC connectivity separately
 4. Verify VRChat OSC settings
-5. Test with Photo Booth or FaceTime to ensure camera works
+5. Test with Windows Camera app to ensure camera works

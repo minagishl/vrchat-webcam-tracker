@@ -24,13 +24,23 @@ git clone <repository-url>
 cd vrchat-webcam-tracker
 ```
 
-2. Install dependencies using uv:
+2. Install dependencies:
 
-```bash
-uv sync
+### Windows
+
+```cmd
+scripts\setup.bat
 ```
 
-3. For macOS, configure camera access permissions (see [macOS Setup Guide](docs/MACOS_SETUP.md) for details)
+### macOS/Linux
+
+```bash
+scripts/setup.sh
+```
+
+3. Platform-specific setup:
+   - **Windows**: See [Windows Setup Guide](docs/WINDOWS_SETUP.md) for detailed instructions and troubleshooting
+   - **macOS**: Configure camera access permissions (see [macOS Setup Guide](docs/MACOS_SETUP.md) for details)
 
 ## Usage
 
@@ -51,7 +61,7 @@ uv run python src/main.py --no-display
 
 ```bash
 # Test OSC functionality without camera
-uv run python -m vrchat_webcam_tracker.osc_test --duration 10 --debug
+uv run python src/osc_test.py --duration 10 --debug
 ```
 
 ### Detailed Options
