@@ -159,7 +159,6 @@ Temporary Items
 .apdisk
 
 # IDE / Editor files
-.vscode/
 .idea/
 *.swp
 *.swo
