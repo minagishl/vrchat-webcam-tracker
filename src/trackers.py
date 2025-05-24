@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
-from typing import Dict
+from typing import Dict, cast
+import os
 
 
 class FaceTracker:
@@ -8,15 +9,30 @@ class FaceTracker:
 
     def __init__(self):
         # Initialize Haar cascade classifiers
-        self.face_cascade = cv2.CascadeClassifier(
-            cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
+        haarcascades_path = cast(str, cv2.data.haarcascades)
+
+        self.face_cascade = cv2.CascadeClassifier()
+        _face_cascade_path = os.path.join(
+            haarcascades_path, "haarcascade_frontalface_default.xml"
         )
-        self.eye_cascade = cv2.CascadeClassifier(
-            cv2.data.haarcascades + "haarcascade_eye.xml"
-        )
-        self.mouth_cascade = cv2.CascadeClassifier(
-            cv2.data.haarcascades + "haarcascade_smile.xml"
-        )
+        if not self.face_cascade.load(_face_cascade_path):
+            raise IOError(
+                f"Failed to load Haar cascade from '{_face_cascade_path}'. Ensure OpenCV data files are correctly installed."
+            )
+
+        self.eye_cascade = cv2.CascadeClassifier()
+        _eye_cascade_path = os.path.join(haarcascades_path, "haarcascade_eye.xml")
+        if not self.eye_cascade.load(_eye_cascade_path):
+            raise IOError(
+                f"Failed to load Haar cascade from '{_eye_cascade_path}'. Ensure OpenCV data files are correctly installed."
+            )
+
+        self.mouth_cascade = cv2.CascadeClassifier()
+        _mouth_cascade_path = os.path.join(haarcascades_path, "haarcascade_smile.xml")
+        if not self.mouth_cascade.load(_mouth_cascade_path):
+            raise IOError(
+                f"Failed to load Haar cascade from '{_mouth_cascade_path}'. Ensure OpenCV data files are correctly installed."
+            )
 
         # Save previous values (for smoothing)
         self.prev_mouth_open = 0.0
