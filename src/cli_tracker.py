@@ -221,7 +221,7 @@ class CLIWebcamTracker:
             total_distance += distance
 
         # Normalize (with arbitrary value)
-        normalized_curl = max(0.0, min(1.0, total_distance / 400.0))
+        normalized_curl = max(0.0, min(1.0, float(total_distance / 400.0)))
         return float(1.0 - normalized_curl)  # curl is inverse
 
     def _display_frame(self, frame):
