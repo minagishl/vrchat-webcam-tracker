@@ -56,6 +56,8 @@ class OSCTestRunner:
     def stop(self):
         """Stop test"""
         self.running = False
+        if self.debug:
+            print()  # Add newline to clear the debug line
         print("OSC test stopped")
 
     def send_test_parameters(self):
@@ -80,11 +82,16 @@ class OSCTestRunner:
             smoothed_value = self.smoothers[param].smooth(value, param)
             self.osc_sender.send_custom_parameter(param, smoothed_value)
 
-            if self.debug:
-                print(f"{param}: {smoothed_value:.3f}")
-
         if self.debug:
-            print("-" * 30)
+            # Create a single line output that overwrites the previous one
+            debug_output = " | ".join(
+                [
+                    f"{param}: {self.smoothers[param].previous_values.get(param, 0.0):.3f}"
+                    for param in test_params.keys()
+                    if param in self.smoothers
+                ]
+            )
+            print(f"\r{debug_output}", end="", flush=True)
 
 
 def main():
