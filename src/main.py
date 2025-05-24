@@ -1,23 +1,9 @@
 #!/usr/bin/env python3
-"""
-VRChat Webcam Tracker
-
-Basic usage:
-    python -m vrchat_webcam_tracker.cli
-
-Options:
-    --ip IP_ADDRESS        VRChat IP address (default: 127.0.0.1)
-    --port PORT            OSC port (default: 9000)
-    --camera CAMERA_ID     Camera ID (default: 0)
-    --debug                Enable debug mode
-    --no-display           Disable screen display
-"""
-
-import argparse
 import signal
 import sys
 import cv2
 import time
+import click
 import config
 from trackers import FaceTracker, HandTracker
 from osc_sender import VRChatOSCSender, ParameterSmoother
@@ -141,51 +127,50 @@ class SimpleTracker:
             print(f"MouthOpen: {smoothed:.3f}")
 
 
-def main():
-    parser = argparse.ArgumentParser(
-        description="VRChat Webcam Tracker - Command Line Version"
-    )
-    parser.add_argument(
-        "--ip",
-        default=config.VRCHAT_OSC_IP,
-        help="VRChat IP address (default: 127.0.0.1)",
-    )
-    parser.add_argument(
-        "--port",
-        type=int,
-        default=config.VRCHAT_OSC_PORT,
-        help="OSC port (default: 9000)",
-    )
-    parser.add_argument(
-        "--camera",
-        type=int,
-        default=config.CAMERA_INDEX,
-        help="Camera ID (default: 0)",
-    )
-    parser.add_argument("--debug", action="store_true", help="Enable debug mode")
-    parser.add_argument(
-        "--no-display", action="store_true", help="Disable screen display"
-    )
+@click.command()
+@click.option(
+    "--ip",
+    default=config.VRCHAT_OSC_IP,
+    help="VRChat IP address",
+    show_default=True,
+)
+@click.option(
+    "--port",
+    type=int,
+    default=config.VRCHAT_OSC_PORT,
+    help="OSC port",
+    show_default=True,
+)
+@click.option(
+    "--camera",
+    type=int,
+    default=config.CAMERA_INDEX,
+    help="Camera ID",
+    show_default=True,
+)
+@click.option("--debug", is_flag=True, help="Enable debug mode")
+@click.option("--no-display", is_flag=True, help="Disable screen display")
+def main(ip, port, camera, debug, no_display):
+    """VRChat Webcam Tracker - Command Line Version
 
-    args = parser.parse_args()
-
+    This tool tracks facial expressions and hand movements using your webcam
+    and sends the data to VRChat via OSC protocol.
+    """
     # Set up Ctrl+C handler
     signal.signal(signal.SIGINT, signal_handler)
 
-    print("VRChat Webcam Tracker (Command Line Version)")
-    print(f"VRChat OSC: {args.ip}:{args.port}")
-    print(f"Camera ID: {args.camera}")
-    print("-" * 50)
+    click.echo("VRChat Webcam Tracker (Command Line Version)")
+    click.echo(f"VRChat OSC: {ip}:{port}")
+    click.echo(f"Camera ID: {camera}")
+    click.echo("-" * 50)
 
     # Create and start tracker
-    tracker = SimpleTracker(
-        ip=args.ip, port=args.port, camera_index=args.camera, debug=args.debug
-    )
+    tracker = SimpleTracker(ip=ip, port=port, camera_index=camera, debug=debug)
 
     try:
-        tracker.start(show_video=not args.no_display)
+        tracker.start(show_video=not no_display)
     except Exception as e:
-        print(f"Error: {e}")
+        click.echo(f"Error: {e}", err=True)
         sys.exit(1)
 
 
