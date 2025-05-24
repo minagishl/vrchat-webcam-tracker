@@ -1,0 +1,34 @@
+[project]
+name = "vrchat-webcam-tracker"
+version = "0.1.0"
+description = "VRChat webcam tracking app - detects facial expressions and arm movements and sends them to VRChat"
+authors = [
+    {name = "Minagishl", email = "minagishl@icloud.com"},
+]
+dependencies = [
+    "opencv-python>=4.8.0",
+    "python-osc>=1.8.0",
+    "numpy>=1.24.0,<2.0.0",
+]
+requires-python = ">=3.9"
+readme = "README.md"
+license = {text = "MIT"}
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel.sources]
+"src" = "vrchat_webcam_tracker"
+
+[tool.uv]
+dev-dependencies = [
+    "pytest>=7.0",
+    "black>=23.0",
+]
