@@ -1,50 +1,60 @@
+"""VRChat Webcam Tracker - Face and Hand Tracking Module.
+
+This module contains classes for tracking facial expressions and hand movements using OpenCV.
+"""
+
+from pathlib import Path
+from typing import cast
+
 import cv2
 import numpy as np
-from typing import Dict, cast
-import os
 
 
 class FaceTracker:
-    """Class for tracking facial expressions (using OpenCV Haar cascades)"""
+    """Class for tracking facial expressions (using OpenCV Haar cascades)."""
 
-    def __init__(self):
+    def __init__(self) -> None:
+        """Initialize the FaceTracker with Haar cascades and smoothing variables."""
         # Initialize Haar cascade classifiers
-        haarcascades_path = cast(str, cv2.data.haarcascades)
+        haarcascades_path = cast("str", cv2.data.haarcascades)
 
         self.face_cascade = cv2.CascadeClassifier()
-        _face_cascade_path = os.path.join(
-            haarcascades_path, "haarcascade_frontalface_default.xml"
-        )
+        _face_cascade_path = Path(haarcascades_path) / "haarcascade_frontalface_default.xml"
         if not self.face_cascade.load(_face_cascade_path):
-            raise IOError(
-                f"Failed to load Haar cascade from '{_face_cascade_path}'. Ensure OpenCV data files are correctly installed."
-            )
+            error_msg = f"Failed to load Haar cascade from '{_face_cascade_path}'"
+            raise OSError(error_msg)
 
         self.eye_cascade = cv2.CascadeClassifier()
-        _eye_cascade_path = os.path.join(haarcascades_path, "haarcascade_eye.xml")
+        _eye_cascade_path = Path(haarcascades_path) / "haarcascade_eye.xml"
         if not self.eye_cascade.load(_eye_cascade_path):
-            raise IOError(
-                f"Failed to load Haar cascade from '{_eye_cascade_path}'. Ensure OpenCV data files are correctly installed."
-            )
+            error_msg = f"Failed to load Haar cascade from '{_eye_cascade_path}'"
+            raise OSError(error_msg)
 
         self.mouth_cascade = cv2.CascadeClassifier()
-        _mouth_cascade_path = os.path.join(haarcascades_path, "haarcascade_smile.xml")
+        _mouth_cascade_path = Path(haarcascades_path) / "haarcascade_smile.xml"
         if not self.mouth_cascade.load(_mouth_cascade_path):
-            raise IOError(
-                f"Failed to load Haar cascade from '{_mouth_cascade_path}'. Ensure OpenCV data files are correctly installed."
-            )
+            error_msg = f"Failed to load Haar cascade from '{_mouth_cascade_path}'"
+            raise OSError(error_msg)
 
         # Save previous values (for smoothing)
         self.prev_mouth_open = 0.0
         self.prev_eye_blink_left = 0.0
         self.prev_eye_blink_right = 0.0
 
-    def detect(self, image: np.ndarray) -> Dict[str, float]:
-        """Main detection method - alias for detect_face_expression for compatibility"""
+    def detect(self, image: np.ndarray) -> dict[str, float]:
+        """Detect facial expressions using the main detection method.
+
+        Args:
+            image: Input image (BGR format).
+
+        Returns:
+            Dictionary with facial expression parameters.
+
+        """
         return self.detect_face_expression(image)
 
-    def detect_face_expression(self, image: np.ndarray) -> Dict[str, float]:
-        """Detect facial expressions and return VRChat parameters"""
+    def detect_face_expression(self, image: np.ndarray) -> dict[str, float]:
+        """Detect facial expressions and return VRChat parameters."""
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
         expression_data = {
@@ -88,9 +98,11 @@ class FaceTracker:
         return expression_data
 
     def _detect_mouth_movement(
-        self, roi_gray: np.ndarray, roi_color: np.ndarray
+        self,
+        roi_gray: np.ndarray,
+        _roi_color: np.ndarray,
     ) -> float:
-        """Detect mouth movement"""
+        """Detect mouth movement."""
         # Mouth region (lower half of face)
         mouth_region_y = int(roi_gray.shape[0] * 0.6)
         mouth_roi = roi_gray[mouth_region_y:, :]
@@ -98,7 +110,9 @@ class FaceTracker:
         # Detect mouth contour with edge detection
         edges = cv2.Canny(mouth_roi, 50, 150)
         contours, _ = cv2.findContours(
-            edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+            edges,
+            cv2.RETR_EXTERNAL,
+            cv2.CHAIN_APPROX_SIMPLE,
         )
 
         if contours:
@@ -116,16 +130,12 @@ class FaceTracker:
 
         return 0.0
 
-    def _detect_eye_blink(self, roi_gray: np.ndarray, roi_color: np.ndarray) -> float:
-        """Detect eye blinking"""
+    def _detect_eye_blink(self, roi_gray: np.ndarray, _roi_color: np.ndarray) -> float:
+        """Detect eye blinking."""
         eyes = self.eye_cascade.detectMultiScale(roi_gray)
 
-        if len(eyes) == 0:
-            # If no eyes detected, likely blinking
-            blink_value = 0.8
-        else:
-            # If eyes detected, they are open
-            blink_value = 0.0
+        # If no eyes detected, likely blinking; if eyes detected, they are open
+        blink_value = 0.8 if len(eyes) == 0 else 0.0
 
         # Smoothing
         smoothed = 0.8 * self.prev_eye_blink_left + 0.2 * blink_value
@@ -133,30 +143,33 @@ class FaceTracker:
         return smoothed
 
     def _detect_smile(self, roi_gray: np.ndarray) -> float:
-        """Detect smile"""
+        """Detect smile."""
         smiles = self.mouth_cascade.detectMultiScale(roi_gray, 1.8, 20)
 
         if len(smiles) > 0:
             return 0.8  # If smile detected
-        else:
-            return 0.0
+        return 0.0
 
 
 class HandTracker:
-    """Class for tracking hand and arm movements (simplified version)"""
+    """Class for tracking hand and arm movements (simplified version)."""
 
-    def __init__(self):
+    def __init__(self) -> None:
+        """Initialize the HandTracker with background subtraction and tracking variables."""
         # Background subtraction model for background difference method
         self.bg_subtractor = cv2.createBackgroundSubtractorMOG2()
         self.prev_left_arm = 0.0
         self.prev_right_arm = 0.0
 
-    def detect(self, image: np.ndarray) -> Dict[str, float]:
-        """Main detection method - alias for detect_hand_pose for compatibility"""
+        # Movement threshold for hand gesture detection
+        self.MOVEMENT_THRESHOLD = 0.01
+
+    def detect(self, image: np.ndarray) -> dict[str, float]:
+        """Detect hand pose using the main detection method."""
         return self.detect_hand_pose(image)
 
-    def detect_hand_pose(self, image: np.ndarray) -> Dict[str, float]:
-        """Detect hand and arm posture and return VRChat parameters"""
+    def detect_hand_pose(self, image: np.ndarray) -> dict[str, float]:
+        """Detect hand and arm posture and return VRChat parameters."""
         tracking_data = {
             "LeftArmRaise": 0.0,
             "RightArmRaise": 0.0,
@@ -186,17 +199,14 @@ class HandTracker:
 
         # Smoothing
         tracking_data["LeftArmRaise"] = float(
-            0.7 * self.prev_left_arm + 0.3 * left_arm_raise
+            0.7 * self.prev_left_arm + 0.3 * left_arm_raise,
         )
         tracking_data["RightArmRaise"] = float(
-            0.7 * self.prev_right_arm + 0.3 * right_arm_raise
+            0.7 * self.prev_right_arm + 0.3 * right_arm_raise,
         )
 
-        self.prev_left_arm = tracking_data["LeftArmRaise"]
-        self.prev_right_arm = tracking_data["RightArmRaise"]
-
         # Hand gestures are set simplistically
-        tracking_data["LeftHandOpen"] = 0.5 if left_movement > 0.01 else 0.0
-        tracking_data["RightHandOpen"] = 0.5 if right_movement > 0.01 else 0.0
+        tracking_data["LeftHandOpen"] = 0.5 if left_movement > self.MOVEMENT_THRESHOLD else 0.0
+        tracking_data["RightHandOpen"] = 0.5 if right_movement > self.MOVEMENT_THRESHOLD else 0.0
 
         return tracking_data

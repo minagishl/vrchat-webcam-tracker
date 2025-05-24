@@ -1,3 +1,9 @@
+"""VRChat Webcam Tracker - Configuration Module.
+
+This module contains configuration settings for the VRChat Webcam Tracker.
+It includes settings for OSC communication, camera parameters, and tracking thresholds.
+"""
+
 # VRChat OSC Configuration
 VRCHAT_OSC_IP = "127.0.0.1"  # IP address of the PC running VRChat
 VRCHAT_OSC_PORT = 9000  # VRChat OSC port

@@ -1,20 +1,15 @@
-"""
-VRChat Webcam Tracker
-
-A Python package that detects facial expressions and arm movements
-using a webcam and sends them to VRChat in real time.
-"""
+"""VRChat Webcam Tracker."""
 
 __version__ = "0.1.0"
-__author__ = "Your Name"
+__author__ = "Minagishl"
 
+from osc_sender import OSCDebugger, ParameterSmoother, VRChatOSCSender
 from trackers import FaceTracker, HandTracker
-from osc_sender import VRChatOSCSender, OSCDebugger, ParameterSmoother
 
 __all__ = [
     "FaceTracker",
     "HandTracker",
-    "VRChatOSCSender",
     "OSCDebugger",
     "ParameterSmoother",
+    "VRChatOSCSender",
 ]

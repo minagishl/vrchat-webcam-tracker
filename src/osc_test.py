@@ -1,28 +1,38 @@
-#!/usr/bin/env python3
-"""
-VRChat Webcam Tracker - Test & Demo Version
+"""VRChat Webcam Tracker - Test & Demo Version.
+
 Test OSC functionality without camera access
 """
 
 import argparse
+import math
 import signal
 import sys
 import time
-import math
+
+import click
+
 import config
-from osc_sender import VRChatOSCSender, ParameterSmoother
+from osc_sender import ParameterSmoother, VRChatOSCSender
 
 
-def signal_handler(sig, frame):
-    """Ctrl+C handler"""
-    print("\nStopping test...")
+def signal_handler(_sig: int, _frame: object) -> None:
+    """Ctrl+C handler."""
+    click.echo("\nStopping tracking...")
     sys.exit(0)
 
 
 class OSCTestRunner:
-    """OSC functionality test runner"""
+    """OSC functionality test runner."""
 
-    def __init__(self, ip, port, debug=False):
+    def __init__(self, ip: str, port: int, *, debug: bool = False) -> None:
+        """Initialize OSCTestRunner.
+
+        Args:
+            ip: VRChat OSC IP address.
+            port: VRChat OSC port.
+            debug: Enable debug mode.
+
+        """
         self.ip = ip
         self.port = port
         self.debug = debug
@@ -33,10 +43,10 @@ class OSCTestRunner:
 
         self.running = False
 
-    def start_test(self, duration=30):
-        """Start OSC test"""
-        print(f"Starting OSC test - running for {duration} seconds")
-        print("Sending various facial expression parameters to VRChat...")
+    def start_test(self, duration: int = 30) -> bool:
+        """Start OSC test."""
+        click.echo(f"Starting OSC test - running for {duration} seconds")
+        click.echo("Sending various facial expression parameters to VRChat...")
 
         self.running = True
         start_time = time.time()
@@ -47,21 +57,21 @@ class OSCTestRunner:
                 time.sleep(0.1)  # 10Hz
 
         except KeyboardInterrupt:
-            print("\nKeyboard interrupt")
+            click.echo("\nKeyboard interrupt")
         finally:
             self.stop()
 
         return True
 
-    def stop(self):
-        """Stop test"""
+    def stop(self) -> None:
+        """Stop test."""
         self.running = False
         if self.debug:
-            print()  # Add newline to clear the debug line
-        print("OSC test stopped")
+            click.echo("")
+        click.echo("OSC test completed")
 
-    def send_test_parameters(self):
-        """Send test parameters"""
+    def send_test_parameters(self) -> None:
+        """Send test parameters."""
         current_time = time.time()
 
         # Generate test parameters with various waveforms
@@ -87,16 +97,17 @@ class OSCTestRunner:
             debug_output = " | ".join(
                 [
                     f"{param}: {self.smoothers[param].previous_values.get(param, 0.0):.3f}"
-                    for param in test_params.keys()
+                    for param in test_params
                     if param in self.smoothers
-                ]
+                ],
             )
-            print(f"\r{debug_output}", end="", flush=True)
+            click.echo(f"\n{debug_output}", nl=False)
 
 
-def main():
+def main() -> None:
+    """Run the main function for OSC test runner."""
     parser = argparse.ArgumentParser(
-        description="VRChat OSC functionality test - camera-free version"
+        description="VRChat OSC functionality test - camera-free version",
     )
     parser.add_argument(
         "--ip",
@@ -122,19 +133,19 @@ def main():
     # Set up Ctrl+C handler
     signal.signal(signal.SIGINT, signal_handler)
 
-    print("VRChat OSC Functionality Test")
-    print(f"VRChat OSC: {args.ip}:{args.port}")
-    print(f"Test duration: {args.duration} seconds")
-    print("-" * 50)
+    click.echo("VRChat OSC Functionality Test")
+    click.echo(f"VRChat OSC: {args.ip}:{args.port}")
+    click.echo(f"Test duration: {args.duration} seconds")
+    click.echo("-" * 50)
 
     # Create and start test runner
     tester = OSCTestRunner(ip=args.ip, port=args.port, debug=args.debug)
 
     try:
         tester.start_test(duration=args.duration)
-        print("Test completed!")
-    except Exception as e:
-        print(f"Error: {e}")
+        click.echo("Test completed!")
+    except (OSError, RuntimeError) as e:
+        click.echo(f"Error: {e}")
         sys.exit(1)
 
 
