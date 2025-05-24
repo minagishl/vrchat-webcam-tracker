@@ -37,14 +37,14 @@ uv sync
 ### Basic Usage
 
 ```bash
-# Command line version (recommended)
-uv run python -m vrchat_webcam_tracker.cli
+# Run the tracker (recommended)
+uv run python src/main.py
 
 # Debug mode
-uv run python -m vrchat_webcam_tracker.cli --debug
+uv run python src/main.py --debug
 
 # No display mode
-uv run python -m vrchat_webcam_tracker.cli --no-display
+uv run python src/main.py --no-display
 ```
 
 ### Testing OSC Functionality
@@ -56,17 +56,15 @@ uv run python -m vrchat_webcam_tracker.osc_test --duration 10 --debug
 
 ### Detailed Options
 
-#### CLI Version
-
 ```bash
-uv run python -m vrchat_webcam_tracker.cli [options]
+python src/main.py [options]
 
 Options:
   --ip IP          VRChat IP address (default: 127.0.0.1)
   --port PORT      OSC port (default: 9000)
   --camera ID      Camera ID (default: 0)
   --debug          Enable debug mode
-  --no-display     Disable screen display
+  --no-display     Disable video display window
 ```
 
 ## Configuration
