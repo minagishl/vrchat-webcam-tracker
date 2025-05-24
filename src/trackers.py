@@ -8,9 +8,15 @@ class FaceTracker:
 
     def __init__(self):
         # Initialize Haar cascade classifiers
-        self.face_cascade = cv2.CascadeClassifier("haarcascade_frontalface_default.xml")
-        self.eye_cascade = cv2.CascadeClassifier("haarcascade_eye.xml")
-        self.mouth_cascade = cv2.CascadeClassifier("haarcascade_smile.xml")
+        self.face_cascade = cv2.CascadeClassifier(
+            cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
+        )
+        self.eye_cascade = cv2.CascadeClassifier(
+            cv2.data.haarcascades + "haarcascade_eye.xml"
+        )
+        self.mouth_cascade = cv2.CascadeClassifier(
+            cv2.data.haarcascades + "haarcascade_smile.xml"
+        )
 
         # Save previous values (for smoothing)
         self.prev_mouth_open = 0.0
