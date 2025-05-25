@@ -1,5 +1,7 @@
 # VRChat Webcam Tracker
 
+> **Note:** This project is currently under development and testing has not been completed yet. Contributions and feedback are welcome!
+
 A Python application that detects facial expressions and arm movements using a webcam and sends them to VRChat in real time.
 
 ## Features
