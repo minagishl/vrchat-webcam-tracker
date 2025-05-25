@@ -44,8 +44,16 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libglib2.0-0 libsm6 libxext6 libxrender-dev libgl1 libgthread-2.0-0
 
-      - name: Build with PyInstaller (Windows/Linux)
-        if: matrix.os != 'macos-latest'
+      - name: Build with PyInstaller (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: bash
+        run: |
+          # Update spec file for current platform output name
+          sed -i "s/name='vrchat-webcam-tracker'/name='${{ matrix.output_name }}'/" build.spec
+          uv run pyinstaller build.spec
+
+      - name: Build with PyInstaller (Linux)
+        if: matrix.os == 'ubuntu-latest'
         run: |
           # Update spec file for current platform output name
           sed -i "s/name='vrchat-webcam-tracker'/name='${{ matrix.output_name }}'/" build.spec
