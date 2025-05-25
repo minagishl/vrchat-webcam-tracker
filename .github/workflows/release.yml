@@ -1,0 +1,132 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            output_name: vrchat-webcam-tracker-windows
+            extension: .exe
+          - os: macos-latest
+            output_name: vrchat-webcam-tracker-macos
+            extension: ''
+          - os: ubuntu-latest
+            output_name: vrchat-webcam-tracker-linux
+            extension: ''
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: 'latest'
+
+      - name: Install dependencies
+        run: |
+          uv sync
+
+      - name: Install PyInstaller
+        run: |
+          uv add pyinstaller
+
+      - name: Install additional dependencies for Linux
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libglib2.0-0 libsm6 libxext6 libxrender-dev libgl1-mesa-glx libgthread-2.0-0
+
+      - name: Build with PyInstaller
+        run: |
+          uv run pyinstaller \
+            --onefile \
+            --name ${{ matrix.output_name }} \
+            --add-data "src:src" \
+            --hidden-import=cv2 \
+            --hidden-import=numpy \
+            --hidden-import=click \
+            --hidden-import=pythonosc \
+            --collect-all cv2 \
+            src/main.py
+
+      - name: Rename executable (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          move dist/${{ matrix.output_name }}.exe dist/${{ matrix.output_name }}-${{ github.ref_name }}.exe
+
+      - name: Rename executable (Unix)
+        if: matrix.os != 'windows-latest'
+        run: |
+          mv dist/${{ matrix.output_name }} dist/${{ matrix.output_name }}-${{ github.ref_name }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.output_name }}-${{ github.ref_name }}
+          path: |
+            dist/${{ matrix.output_name }}-${{ github.ref_name }}${{ matrix.extension }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Display structure of downloaded files
+        run: ls -la artifacts/
+
+      - name: Create Release and Upload Assets
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Release ${{ github.ref_name }}
+          body: |
+            ## VRChat Webcam Tracker ${{ github.ref_name }}
+
+            ### Features
+            - Facial expression tracking
+            - Hand movement detection
+            - Real-time OSC communication with VRChat
+
+            ### Download
+            - **Windows**: Download `vrchat-webcam-tracker-windows-${{ github.ref_name }}.exe`
+            - **macOS**: Download `vrchat-webcam-tracker-macos-${{ github.ref_name }}`
+            - **Linux**: Download `vrchat-webcam-tracker-linux-${{ github.ref_name }}`
+
+            ### Usage
+            Run the executable from command line:
+            ```bash
+            # Windows
+            ./vrchat-webcam-tracker-windows-${{ github.ref_name }}.exe
+
+            # macOS/Linux
+            chmod +x vrchat-webcam-tracker-macos-${{ github.ref_name }}
+            ./vrchat-webcam-tracker-macos-${{ github.ref_name }}
+            ```
+
+            For detailed setup instructions, see the [documentation](https://github.com/${{ github.repository }}).
+          files: |
+            artifacts/vrchat-webcam-tracker-windows-${{ github.ref_name }}/vrchat-webcam-tracker-windows-${{ github.ref_name }}.exe
+            artifacts/vrchat-webcam-tracker-macos-${{ github.ref_name }}/vrchat-webcam-tracker-macos-${{ github.ref_name }}
+            artifacts/vrchat-webcam-tracker-linux-${{ github.ref_name }}/vrchat-webcam-tracker-linux-${{ github.ref_name }}
+          draft: false
+          prerelease: false
