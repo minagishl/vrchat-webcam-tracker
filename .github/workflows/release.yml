@@ -46,7 +46,7 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libglib2.0-0 libsm6 libxext6 libxrender-dev libgl1-mesa-glx libgthread-2.0-0
+          sudo apt-get install -y libglib2.0-0 libsm6 libxext6 libxrender-dev libgl1 libgthread-2.0-0
 
       - name: Build with PyInstaller
         run: |
