@@ -1,25 +1,15 @@
 # -*- mode: python ; coding: utf-8 -*-
 
-block_cipher = None
-
 a = Analysis(
     ['src/main.py'],
-    pathex=['.'],
+    pathex=['.', 'src'],
     binaries=[],
-    datas=[
-        ('src/config.py', 'src'),
-        ('src/osc_sender.py', 'src'),
-        ('src/trackers.py', 'src'),
-        ('src/__init__.py', 'src'),
-    ],
+    datas=[],
     hiddenimports=[
         'cv2',
         'numpy',
         'click',
         'pythonosc',
-        'src.config',
-        'src.osc_sender',
-        'src.trackers',
         'config',
         'osc_sender',
         'trackers',
@@ -30,18 +20,11 @@ a = Analysis(
     excludes=[],
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
-    cipher=block_cipher,
+    cipher=None,
     noarchive=False,
 )
 
-# Collect all cv2 dependencies
-from PyInstaller.utils.hooks import collect_all
-cv2_datas, cv2_binaries, cv2_hiddenimports = collect_all('cv2')
-a.datas += cv2_datas
-a.binaries += cv2_binaries
-a.hiddenimports += cv2_hiddenimports
-
-pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
+pyz = PYZ(a.pure, a.zipped_data, cipher=None)
 
 exe = EXE(
     pyz,
@@ -49,7 +32,6 @@ exe = EXE(
     a.binaries,
     a.zipfiles,
     a.datas,
-    [],
     name='vrchat-webcam-tracker',
     debug=False,
     bootloader_ignore_signals=False,
