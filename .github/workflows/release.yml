@@ -48,10 +48,18 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libglib2.0-0 libsm6 libxext6 libxrender-dev libgl1 libgthread-2.0-0
 
-      - name: Build with PyInstaller
+      - name: Build with PyInstaller (Windows/Linux)
+        if: matrix.os != 'macos-latest'
         run: |
           # Update spec file for current platform output name
           sed -i "s/name='vrchat-webcam-tracker'/name='${{ matrix.output_name }}'/" build.spec
+          uv run pyinstaller build.spec
+
+      - name: Build with PyInstaller (macOS)
+        if: matrix.os == 'macos-latest'
+        run: |
+          # Update spec file for current platform output name (macOS sed syntax)
+          sed -i '' "s/name='vrchat-webcam-tracker'/name='${{ matrix.output_name }}'/" build.spec
           uv run pyinstaller build.spec
 
       - name: Rename executable (Windows)
