@@ -67,7 +67,7 @@ uv run python src/osc_test.py --duration 10 --debug
 ### Detailed Options
 
 ```bash
-python src/main.py [options]
+uv run python src/main.py [options]
 
 Options:
   --ip IP          VRChat IP address (default: 127.0.0.1)
