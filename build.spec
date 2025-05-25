@@ -1,10 +1,20 @@
 # -*- mode: python ; coding: utf-8 -*-
+import cv2
+from pathlib import Path
+
+# Get OpenCV data directory for Haar cascades
+opencv_data_path = Path(cv2.data.haarcascades)
 
 a = Analysis(
     ['src/main.py'],
     pathex=['.', 'src'],
     binaries=[],
-    datas=[],
+    datas=[
+        # Include OpenCV Haar cascade files
+        (str(opencv_data_path / 'haarcascade_frontalface_default.xml'), 'cv2/data'),
+        (str(opencv_data_path / 'haarcascade_eye.xml'), 'cv2/data'),
+        (str(opencv_data_path / 'haarcascade_smile.xml'), 'cv2/data'),
+    ],
     hiddenimports=[
         'cv2',
         'numpy',

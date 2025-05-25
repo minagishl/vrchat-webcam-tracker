@@ -3,11 +3,33 @@
 This module contains classes for tracking facial expressions and hand movements using OpenCV.
 """
 
+import sys
 from pathlib import Path
 from typing import cast
 
 import cv2
 import numpy as np
+
+
+def get_resource_path(relative_path: str) -> str:
+    """Get absolute path to resource, works for dev and for PyInstaller."""
+
+    def _raise_attribute_error() -> None:
+        raise AttributeError
+
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = getattr(sys, "_MEIPASS", None)
+        if base_path is None:
+            _raise_attribute_error()
+    except AttributeError:
+        base_path = Path(__file__).parent.parent
+
+    # Ensure base_path is not None before using it
+    if base_path is None:
+        base_path = Path(__file__).parent.parent
+
+    return str(Path(base_path) / relative_path)
 
 
 class FaceTracker:
@@ -20,24 +42,32 @@ class FaceTracker:
     def __init__(self) -> None:
         """Initialize the FaceTracker with Haar cascades and smoothing variables."""
         # Initialize Haar cascade classifiers
-        haarcascades_path = cast("str", cv2.data.haarcascades)
+        # Try to load from packaged resources first, fallback to cv2.data
+        try:
+            # For PyInstaller packaged application
+            face_cascade_path = get_resource_path("cv2/data/haarcascade_frontalface_default.xml")
+            eye_cascade_path = get_resource_path("cv2/data/haarcascade_eye.xml")
+            mouth_cascade_path = get_resource_path("cv2/data/haarcascade_smile.xml")
+        except (AttributeError, FileNotFoundError, OSError):
+            # Fallback to original cv2.data paths
+            haarcascades_path = cast("str", cv2.data.haarcascades)
+            face_cascade_path = str(Path(haarcascades_path) / "haarcascade_frontalface_default.xml")
+            eye_cascade_path = str(Path(haarcascades_path) / "haarcascade_eye.xml")
+            mouth_cascade_path = str(Path(haarcascades_path) / "haarcascade_smile.xml")
 
         self.face_cascade = cv2.CascadeClassifier()
-        _face_cascade_path = Path(haarcascades_path) / "haarcascade_frontalface_default.xml"
-        if not self.face_cascade.load(_face_cascade_path):
-            error_msg = f"Failed to load Haar cascade from '{_face_cascade_path}'"
+        if not self.face_cascade.load(face_cascade_path):
+            error_msg = f"Failed to load Haar cascade from '{face_cascade_path}'"
             raise OSError(error_msg)
 
         self.eye_cascade = cv2.CascadeClassifier()
-        _eye_cascade_path = Path(haarcascades_path) / "haarcascade_eye.xml"
-        if not self.eye_cascade.load(_eye_cascade_path):
-            error_msg = f"Failed to load Haar cascade from '{_eye_cascade_path}'"
+        if not self.eye_cascade.load(eye_cascade_path):
+            error_msg = f"Failed to load Haar cascade from '{eye_cascade_path}'"
             raise OSError(error_msg)
 
         self.mouth_cascade = cv2.CascadeClassifier()
-        _mouth_cascade_path = Path(haarcascades_path) / "haarcascade_smile.xml"
-        if not self.mouth_cascade.load(_mouth_cascade_path):
-            error_msg = f"Failed to load Haar cascade from '{_mouth_cascade_path}'"
+        if not self.mouth_cascade.load(mouth_cascade_path):
+            error_msg = f"Failed to load Haar cascade from '{mouth_cascade_path}'"
             raise OSError(error_msg)
 
         # Save previous values (for smoothing)
