@@ -13,6 +13,10 @@ import numpy as np
 class FaceTracker:
     """Class for tracking facial expressions (using OpenCV Haar cascades)."""
 
+    # Head pose detection thresholds
+    HEAD_MOVEMENT_THRESHOLD = 0.1
+    FACE_ASPECT_RATIO_THRESHOLD = 1.2
+
     def __init__(self) -> None:
         """Initialize the FaceTracker with Haar cascades and smoothing variables."""
         # Initialize Haar cascade classifiers
@@ -64,6 +68,13 @@ class FaceTracker:
             "LeftEyebrowRaise": 0.0,
             "RightEyebrowRaise": 0.0,
             "MouthSmile": 0.0,
+            # Head pose parameters
+            "HeadTiltLeft": 0.0,
+            "HeadTiltRight": 0.0,
+            "HeadTiltUp": 0.0,
+            "HeadTiltDown": 0.0,
+            "HeadTurnLeft": 0.0,
+            "HeadTurnRight": 0.0,
         }
 
         # Detect faces
@@ -90,6 +101,10 @@ class FaceTracker:
             # Smile detection
             smile = self._detect_smile(roi_gray)
             expression_data["MouthSmile"] = smile
+
+            # Head pose detection
+            head_pose = self._detect_head_pose(face, image.shape)
+            expression_data.update(head_pose)
 
             # Eyebrow movement is substituted with random values (difficult to implement)
             expression_data["LeftEyebrowRaise"] = 0.0
@@ -149,6 +164,68 @@ class FaceTracker:
         if len(smiles) > 0:
             return 0.8  # If smile detected
         return 0.0
+
+    def _detect_head_pose(
+        self,
+        face_rect: tuple[int, int, int, int],
+        image_shape: tuple[int, ...],
+    ) -> dict[str, float]:
+        """Detect head pose based on face position and size."""
+        x, y, w, h = face_rect
+        image_height, image_width = image_shape[:2]
+
+        # Center of the face
+        face_center_x = x + w // 2
+        face_center_y = y + h // 2
+
+        # Image center
+        image_center_x = image_width // 2
+        image_center_y = image_height // 2
+
+        # Calculate relative position (normalized to -1 to 1)
+        horizontal_offset = (face_center_x - image_center_x) / (image_width // 2)
+        vertical_offset = (face_center_y - image_center_y) / (image_height // 2)
+
+        # Convert to VRChat parameters
+        head_pose = {
+            "HeadTiltLeft": 0.0,
+            "HeadTiltRight": 0.0,
+            "HeadTiltUp": 0.0,
+            "HeadTiltDown": 0.0,
+            "HeadTurnLeft": 0.0,
+            "HeadTurnRight": 0.0,
+        }
+
+        # Horizontal turn (left/right)
+        if (
+            horizontal_offset > self.HEAD_MOVEMENT_THRESHOLD
+        ):  # Face is to the right of center = head turned left
+            head_pose["HeadTurnLeft"] = min(1.0, abs(horizontal_offset) * 2.0)
+        elif (
+            horizontal_offset < -self.HEAD_MOVEMENT_THRESHOLD
+        ):  # Face is to the left of center = head turned right
+            head_pose["HeadTurnRight"] = min(1.0, abs(horizontal_offset) * 2.0)
+
+        # Vertical tilt (up/down)
+        if (
+            vertical_offset > self.HEAD_MOVEMENT_THRESHOLD
+        ):  # Face is below center = head tilted down
+            head_pose["HeadTiltDown"] = min(1.0, abs(vertical_offset) * 2.0)
+        elif (
+            vertical_offset < -self.HEAD_MOVEMENT_THRESHOLD
+        ):  # Face is above center = head tilted up
+            head_pose["HeadTiltUp"] = min(1.0, abs(vertical_offset) * 2.0)
+
+        # Simple tilt detection based on face aspect ratio
+        face_aspect_ratio = w / h if h > 0 else 1.0
+        if face_aspect_ratio > self.FACE_ASPECT_RATIO_THRESHOLD:  # Face appears wider = head tilted
+            # Determine tilt direction based on horizontal position
+            if horizontal_offset > 0:
+                head_pose["HeadTiltRight"] = min(1.0, (face_aspect_ratio - 1.0) * 2.0)
+            else:
+                head_pose["HeadTiltLeft"] = min(1.0, (face_aspect_ratio - 1.0) * 2.0)
+
+        return head_pose
 
 
 class HandTracker:

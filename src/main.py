@@ -17,6 +17,7 @@ from osc_sender import ParameterSmoother, VRChatOSCSender
 from trackers import FaceTracker, HandTracker
 
 ESC_KEY_CODE = 27  # ESC key code
+MIN_DISPLAY_THRESHOLD = 0.1  # Minimum parameter value to display in debug mode
 
 
 def signal_handler(_sig: int, _frame: object) -> None:
@@ -115,7 +116,6 @@ class SimpleTracker:
     def process_frame(self, frame: np.ndarray) -> None:
         """Frame processing."""
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
         # Face detection
         face_data = self.face_tracker.detect(frame_rgb)
@@ -127,9 +127,37 @@ class SimpleTracker:
         if hand_data and self.debug:
             click.echo(f"Hand detection: {list(hand_data.keys())}")
 
-        # OSC transmission (simplified version)
-        if face_data:
-            self.send_test_osc()
+        # OSC transmission - send actual tracking data
+        self.send_tracking_data(face_data, hand_data)
+
+    def send_tracking_data(self, face_data: dict[str, float], hand_data: dict[str, float]) -> None:
+        """Send actual tracking data to VRChat via OSC."""
+        # Initialize smoothers for all parameters if they don't exist
+        all_params = {**face_data, **hand_data}
+
+        for param_name in all_params:
+            if param_name not in self.smoothers:
+                self.smoothers[param_name] = ParameterSmoother()
+
+        # Smooth and send face data
+        smoothed_face_data = {}
+        for param_name, value in face_data.items():
+            smoothed_value = self.smoothers[param_name].smooth(value, param_name)
+            smoothed_face_data[param_name] = smoothed_value
+
+        # Smooth and send hand data
+        smoothed_hand_data = {}
+        for param_name, value in hand_data.items():
+            smoothed_value = self.smoothers[param_name].smooth(value, param_name)
+            smoothed_hand_data[param_name] = smoothed_value
+
+        # Send combined data to VRChat
+        self.osc_sender.send_combined_data(smoothed_face_data, smoothed_hand_data)
+        if self.debug:
+            # Display all parameters being sent
+            for param_name, value in {**smoothed_face_data, **smoothed_hand_data}.items():
+                if value > MIN_DISPLAY_THRESHOLD:  # Only show parameters with significant values
+                    click.echo(f"{param_name}: {value:.3f}")
 
     def send_test_osc(self) -> None:
         """Test OSC transmission."""
