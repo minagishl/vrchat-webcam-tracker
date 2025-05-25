@@ -72,10 +72,23 @@ python src/main.py [options]
 Options:
   --ip IP          VRChat IP address (default: 127.0.0.1)
   --port PORT      OSC port (default: 9000)
-  --camera ID      Camera ID (default: 0)
+  --camera ID      Camera ID (optional)
   --debug          Enable debug mode
   --no-display     Disable video display window
 ```
+
+### Camera Selection
+
+When you run the tracker without specifying the `--camera` option, you'll be prompted to enter a camera ID interactively:
+
+```
+Camera ID Selection
+--------------------
+Enter camera ID [0]: 1
+Selected > 1
+```
+
+The system will test if the specified camera can be opened and prompt you to try another ID if it fails. This ensures you select a working camera before starting the tracking process.
 
 ## Configuration
 

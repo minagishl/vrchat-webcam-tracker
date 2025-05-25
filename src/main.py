@@ -4,15 +4,20 @@ This tool tracks facial expressions and hand movements using your webcam
 and sends the data to VRChat via OSC protocol.
 """
 
+from __future__ import annotations
+
 import signal
 import sys
 import time
+from typing import TYPE_CHECKING
 
 import click
 import cv2
-import numpy as np
 
 import config
+
+if TYPE_CHECKING:
+    import numpy as np
 from osc_sender import ParameterSmoother, VRChatOSCSender
 from trackers import FaceTracker, HandTracker
 
@@ -24,6 +29,41 @@ def signal_handler(_sig: int, _frame: object) -> None:
     """Ctrl+C handler."""
     click.echo("\nStopping tracking...")
     sys.exit(0)
+
+
+def get_camera_input() -> int:
+    """Get camera ID from user input with interactive selection.
+
+    Returns:
+        int: Selected camera ID.
+
+    """
+    click.echo("Camera ID Selection")
+    click.echo("-" * 20)
+
+    try:
+        while True:
+            camera_id = click.prompt("Enter camera ID", type=int, default=config.CAMERA_INDEX)
+
+            # Test if camera can be opened
+            test_cap = cv2.VideoCapture(camera_id)
+            if test_cap.isOpened():
+                test_cap.release()
+
+                # Clear the camera selection lines
+                click.echo("\033[A\033[K" * 3, nl=False)  # Move up 3 lines and clear them
+
+                click.echo(f"Selected > {camera_id}")
+
+                return camera_id
+            click.echo(f"Error: Cannot open camera {camera_id}. Please try another ID.", err=True)
+
+    except click.Abort:
+        click.echo("\nCamera selection cancelled.")
+        sys.exit(0)
+    except (ValueError, TypeError) as e:
+        click.echo(f"Error: {e}. Please enter a valid camera ID.", err=True)
+        return get_camera_input()  # Retry on error
 
 
 class SimpleTracker:
@@ -191,13 +231,11 @@ class SimpleTracker:
 @click.option(
     "--camera",
     type=int,
-    default=config.CAMERA_INDEX,
-    help="Camera ID",
-    show_default=True,
+    help="Camera ID (if not specified, interactive selection will be prompted)",
 )
 @click.option("--debug", is_flag=True, help="Enable debug mode")
 @click.option("--no-display", is_flag=True, help="Disable screen display")
-def main(ip: str, port: int, camera: int, *, debug: bool, no_display: bool) -> None:
+def main(ip: str, port: int, camera: int | None, *, debug: bool, no_display: bool) -> None:
     """VRChat Webcam Tracker - Command Line Version.
 
     This tool tracks facial expressions and hand movements using your webcam
@@ -208,7 +246,13 @@ def main(ip: str, port: int, camera: int, *, debug: bool, no_display: bool) -> N
 
     click.echo("VRChat Webcam Tracker (Command Line Version)")
     click.echo(f"VRChat OSC: {ip}:{port}")
-    click.echo(f"Camera ID: {camera}")
+
+    # Camera ID selection - interactive if not specified via --camera
+    if camera is None:
+        camera = get_camera_input()
+    else:
+        click.echo(f"Camera ID: {camera}")
+
     click.echo("-" * 50)
 
     # Create and start tracker
