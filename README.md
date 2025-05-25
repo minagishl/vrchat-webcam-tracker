@@ -82,8 +82,6 @@ Options:
 When you run the tracker without specifying the `--camera` option, you'll be prompted to enter a camera ID interactively:
 
 ```
-Camera ID Selection
---------------------
 Enter camera ID [0]: 1
 Selected > 1
 ```
