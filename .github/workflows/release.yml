@@ -108,11 +108,6 @@ jobs:
           body: |
             ## VRChat Webcam Tracker ${{ github.ref_name }}
 
-            ### Features
-            - Facial expression tracking
-            - Hand movement detection
-            - Real-time OSC communication with VRChat
-
             ### Download
             - **Windows**: Download `vrchat-webcam-tracker-windows-${{ github.ref_name }}.exe`
             - **macOS**: Download `vrchat-webcam-tracker-macos-${{ github.ref_name }}`
