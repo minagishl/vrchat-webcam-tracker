@@ -14,21 +14,13 @@ from typing import TYPE_CHECKING
 import click
 import cv2
 
-# Handle both direct execution and PyInstaller packaging
-try:
-    from . import config
-except ImportError:
-    import config
+import config
 
 if TYPE_CHECKING:
     import numpy as np
 
-try:
-    from .osc_sender import ParameterSmoother, VRChatOSCSender
-    from .trackers import FaceTracker, HandTracker
-except ImportError:
-    from osc_sender import ParameterSmoother, VRChatOSCSender
-    from trackers import FaceTracker, HandTracker
+from osc_sender import ParameterSmoother, VRChatOSCSender
+from trackers import FaceTracker, HandTracker
 
 ESC_KEY_CODE = 27  # ESC key code
 MIN_DISPLAY_THRESHOLD = 0.1  # Minimum parameter value to display in debug mode

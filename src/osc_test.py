@@ -11,16 +11,8 @@ import time
 
 import click
 
-# Handle both direct execution and PyInstaller packaging
-try:
-    from . import config
-except ImportError:
-    import config
-
-try:
-    from .osc_sender import ParameterSmoother, VRChatOSCSender
-except ImportError:
-    from osc_sender import ParameterSmoother, VRChatOSCSender
+import config
+from osc_sender import ParameterSmoother, VRChatOSCSender
 
 
 def signal_handler(_sig: int, _frame: object) -> None:

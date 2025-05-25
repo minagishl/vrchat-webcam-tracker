@@ -11,11 +11,7 @@ import time
 import click
 from pythonosc import udp_client
 
-# Handle both direct execution and PyInstaller packaging
-try:
-    from . import config
-except ImportError:
-    import config
+import config
 
 
 class VRChatOSCSender:
