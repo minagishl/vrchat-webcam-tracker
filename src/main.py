@@ -39,7 +39,7 @@ def get_camera_input() -> int:
 
     """
     click.echo("Camera ID Selection")
-    click.echo("-" * 20)
+    click.echo("-" * 50)
 
     try:
         while True:
