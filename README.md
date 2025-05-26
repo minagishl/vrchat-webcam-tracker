@@ -1,6 +1,7 @@
 # VRChat Webcam Tracker
 
-> **Note:** This project is currently under development and testing has not been completed yet. Contributions and feedback are welcome!
+> **Note:** I aimed to create an app that allows for _easy_ face and arm tracking using a webcam in desktop mode, but it turned out to be impossible.
+> Let’s give up and either subscribe to VRC+, or wait for the day when Selfie Expression becomes available for free.
 
 A Python application that detects facial expressions and arm movements using a webcam and sends them to VRChat in real time.
 
