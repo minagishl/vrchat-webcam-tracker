@@ -1,6 +1,6 @@
 """VRChat Webcam Tracker."""
 
-__version__ = "0.1.1"
+__version__ = "0.1.2"
 __author__ = "Minagishl"
 
 from osc_sender import OSCDebugger, ParameterSmoother, VRChatOSCSender

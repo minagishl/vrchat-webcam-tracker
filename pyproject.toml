@@ -1,6 +1,6 @@
 [project]
 name = "vrchat-webcam-tracker"
-version = "0.1.1"
+version = "0.1.2"
 description = "VRChat Webcam Tracker - detects facial expressions and arm movements and sends them to VRChat"
 authors = [
     {name = "Minagishl", email = "minagishl@icloud.com"},
