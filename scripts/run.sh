@@ -14,6 +14,8 @@ if ! command -v uv &> /dev/null; then
 fi
 
 # Run the application
+# The app now includes UpperBodyTracker with MediaPipe Pose for body tracking
+# Body tracking data is automatically sent via OSC when --no-display is used
 uv run python src/main.py "$@"
 
 echo ""

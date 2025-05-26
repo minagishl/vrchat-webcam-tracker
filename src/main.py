@@ -88,6 +88,16 @@ class SimpleTracker:
         # Initialize trackers and OSC sender
         self.face_tracker = FaceTracker()
         self.hand_tracker = HandTracker()
+
+        # Initialize UpperBodyTracker (import inside to avoid auto-formatter issues)
+        try:
+            from trackers import UpperBodyTracker
+
+            self.body_tracker = UpperBodyTracker()
+        except ImportError as e:
+            click.echo(f"Warning: UpperBodyTracker not available: {e}")
+            self.body_tracker = None
+
         self.osc_sender = VRChatOSCSender(ip, port)
         self.smoothers = {}
 
@@ -168,11 +178,26 @@ class SimpleTracker:
         if hand_data and self.debug:
             click.echo(f"Hand detection: {list(hand_data.keys())}")
 
-        # OSC transmission - send actual tracking data
-        self.send_tracking_data(face_data, hand_data)
+        # Body tracking (upper body pose detection)
+        body_data = {}
+        if self.body_tracker:
+            body_data = self.body_tracker.detect(frame)
+            if body_data and self.debug:
+                click.echo(f"Body detection: {len(body_data)} landmarks")
 
-    def send_tracking_data(self, face_data: dict[str, float], hand_data: dict[str, float]) -> None:
+        # OSC transmission - send actual tracking data
+        self.send_tracking_data(face_data, hand_data, body_data)
+
+    def send_tracking_data(
+        self,
+        face_data: dict[str, float],
+        hand_data: dict[str, float],
+        body_data: dict[str, tuple[float, float, float]] | None = None,
+    ) -> None:
         """Send actual tracking data to VRChat via OSC."""
+        if body_data is None:
+            body_data = {}
+
         # Initialize smoothers for all parameters if they don't exist
         all_params = {**face_data, **hand_data}
 
@@ -194,6 +219,11 @@ class SimpleTracker:
 
         # Send combined data to VRChat
         self.osc_sender.send_combined_data(smoothed_face_data, smoothed_hand_data)
+
+        # Send body tracking data if available
+        if body_data:
+            self.osc_sender.send_body_tracking_data(body_data)
+
         if self.debug:
             # Display all parameters being sent
             for param_name, value in {**smoothed_face_data, **smoothed_hand_data}.items():

@@ -98,6 +98,35 @@ class VRChatOSCSender:
                 f"Combined data transmission error: {e}",
             )
 
+    def send_body_tracking_data(self, body_data: dict[str, tuple[float, float, float]]) -> None:
+        """Send body tracking data to VRChat via OSC.
+
+        Args:
+            body_data: Dictionary with landmark data in format {"Landmark{index}": (x, y, z)}.
+
+        """
+        current_time = time.time()
+        if current_time - self.last_send_time < self.send_interval:
+            return
+
+        try:
+            # Send body tracking data to VRChat's tracking system
+            for i, (_landmark_name, (x, y, z)) in enumerate(body_data.items()):
+                # Send position data
+                position_address = f"/tracking/trackers/{i}/position"
+                self.client.send_message(position_address, [x, y, z])
+
+                # Send rotation data (fixed values as requested)
+                rotation_address = f"/tracking/trackers/{i}/rotation"
+                self.client.send_message(rotation_address, [0.0, 0.0, 0.0])
+
+            self.last_send_time = current_time
+
+        except (OSError, RuntimeError) as e:
+            click.echo(
+                f"Body tracking data transmission error: {e}",
+            )
+
     def send_custom_parameter(self, parameter_name: str, value: float) -> None:
         """Send custom parameter."""
         try:

@@ -5,7 +5,7 @@ This module contains classes for tracking facial expressions and hand movements 
 
 import sys
 from pathlib import Path
-from typing import cast
+from typing import ClassVar, cast
 
 import cv2
 import numpy as np
@@ -43,17 +43,36 @@ class FaceTracker:
         """Initialize the FaceTracker with Haar cascades and smoothing variables."""
         # Initialize Haar cascade classifiers
         # Try to load from packaged resources first, fallback to cv2.data
+
+        def _validate_cascade_files(
+            face_path: str,
+            eye_path: str,
+            mouth_path: str,
+        ) -> None:
+            """Validate that cascade files exist, raise error if not."""
+            if not (
+                Path(face_path).exists() and Path(eye_path).exists() and Path(mouth_path).exists()
+            ):
+                error_msg = "Cascade files not found in package"
+                raise FileNotFoundError(error_msg)
+
+        # Check if we're in a PyInstaller bundle and the cascade files exist
         try:
-            # For PyInstaller packaged application
-            face_cascade_path = get_resource_path("cv2/data/haarcascade_frontalface_default.xml")
-            eye_cascade_path = get_resource_path("cv2/data/haarcascade_eye.xml")
-            mouth_cascade_path = get_resource_path("cv2/data/haarcascade_smile.xml")
-        except (AttributeError, FileNotFoundError, OSError):
-            # Fallback to original cv2.data paths
             haarcascades_path = cast("str", cv2.data.haarcascades)
             face_cascade_path = str(Path(haarcascades_path) / "haarcascade_frontalface_default.xml")
             eye_cascade_path = str(Path(haarcascades_path) / "haarcascade_eye.xml")
             mouth_cascade_path = str(Path(haarcascades_path) / "haarcascade_smile.xml")
+
+            # Verify the files actually exist
+            _validate_cascade_files(face_cascade_path, eye_cascade_path, mouth_cascade_path)
+
+        except (AttributeError, FileNotFoundError, OSError):
+            error_msg = "Cascade files not found in package"
+
+            def _raise_cascade_error() -> None:
+                raise FileNotFoundError(error_msg)
+
+            _raise_cascade_error()
 
         self.face_cascade = cv2.CascadeClassifier()
         if not self.face_cascade.load(face_cascade_path):
@@ -317,3 +336,78 @@ class HandTracker:
         tracking_data["RightHandOpen"] = 0.5 if right_movement > self.MOVEMENT_THRESHOLD else 0.0
 
         return tracking_data
+
+
+class UpperBodyTracker:
+    """Class for tracking upper body pose using MediaPipe Pose."""
+
+    # Upper body landmark indices from MediaPipe Pose
+    UPPER_BODY_LANDMARKS: ClassVar[list[int]] = [
+        0,  # NOSE
+        2,  # LEFT_EYE_INNER
+        5,  # RIGHT_EYE_INNER
+        7,  # LEFT_EAR
+        8,  # RIGHT_EAR
+        9,  # MOUTH_LEFT
+        10,  # MOUTH_RIGHT
+        11,  # LEFT_SHOULDER
+        12,  # RIGHT_SHOULDER
+        13,  # LEFT_ELBOW
+        14,  # RIGHT_ELBOW
+        15,  # LEFT_WRIST
+        16,  # RIGHT_WRIST
+    ]
+
+    def __init__(self) -> None:
+        """Initialize the UpperBodyTracker with MediaPipe Pose."""
+        try:
+            import mediapipe as mp
+
+            self.mp = mp
+            self.mp_pose = mp.solutions.pose  # type: ignore[import]
+            self.pose = self.mp_pose.Pose(
+                static_image_mode=False,
+                model_complexity=1,
+                smooth_landmarks=True,
+                enable_segmentation=False,
+                smooth_segmentation=True,
+                min_detection_confidence=0.5,
+                min_tracking_confidence=0.5,
+            )
+        except ImportError as e:
+            error_msg = (
+                "MediaPipe is required for UpperBodyTracker. "
+                "Please install it with: pip install mediapipe"
+            )
+            raise ImportError(error_msg) from e
+
+    def detect(self, image: np.ndarray) -> dict[str, tuple[float, float, float]]:
+        """Detect upper body pose landmarks.
+
+        Args:
+            image: Input image (BGR format).
+
+        Returns:
+            Dictionary with landmark data in format {"Landmark{index}": (x, y, z)}.
+
+        """
+        # Convert BGR to RGB
+        rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+        # Process the image
+        results = self.pose.process(rgb_image)
+
+        landmark_data = {}
+
+        if results.pose_landmarks:
+            # Extract upper body landmarks
+            for landmark_idx in self.UPPER_BODY_LANDMARKS:
+                if landmark_idx < len(results.pose_landmarks.landmark):
+                    landmark = results.pose_landmarks.landmark[landmark_idx]
+                    landmark_data[f"Landmark{landmark_idx}"] = (
+                        landmark.x,
+                        landmark.y,
+                        landmark.z,
+                    )
+
+        return landmark_data
