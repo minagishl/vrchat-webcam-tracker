@@ -94,8 +94,9 @@ class SimpleTracker:
             from trackers import UpperBodyTracker
 
             self.body_tracker = UpperBodyTracker()
-        except ImportError as e:
+        except (ImportError, RuntimeError) as e:
             click.echo(f"Warning: UpperBodyTracker not available: {e}")
+            click.echo("Continuing with face and hand tracking only...")
             self.body_tracker = None
 
         self.osc_sender = VRChatOSCSender(ip, port)

@@ -380,6 +380,13 @@ class UpperBodyTracker:
                 "Please install it with: pip install mediapipe"
             )
             raise ImportError(error_msg) from e
+        except Exception as e:
+            error_msg = (
+                f"Failed to initialize MediaPipe Pose: {e}. "
+                "This might be due to missing MediaPipe data files in the packaged executable. "
+                "Please ensure MediaPipe is properly installed or contact support."
+            )
+            raise RuntimeError(error_msg) from e
 
     def detect(self, image: np.ndarray) -> dict[str, tuple[float, float, float]]:
         """Detect upper body pose landmarks.
