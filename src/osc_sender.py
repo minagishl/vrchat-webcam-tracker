@@ -35,25 +35,6 @@ class VRChatOSCSender:
             f"VRChat OSC client initialized: {self.ip}:{self.port}",
         )
 
-    def send_face_tracking_data(self, face_data: dict[str, float]) -> None:
-        """Send facial expression tracking data to VRChat."""
-        current_time = time.time()
-        if current_time - self.last_send_time < self.send_interval:
-            return
-
-        try:
-            # Send to VRChat's standard OSC addresses
-            for param_name, value in face_data.items():
-                address = f"/avatar/parameters/{param_name}"
-                self.client.send_message(address, value)
-
-            self.last_send_time = current_time
-
-        except (OSError, RuntimeError) as e:
-            click.echo(
-                f"Facial expression data transmission error: {e}",
-            )
-
     def send_hand_tracking_data(self, hand_data: dict[str, float]) -> None:
         """Send hand and arm tracking data to VRChat."""
         current_time = time.time()
@@ -110,21 +91,93 @@ class VRChatOSCSender:
             return
 
         try:
-            # Send body tracking data to VRChat's tracking system
-            for i, (_landmark_name, (x, y, z)) in enumerate(body_data.items()):
-                # Send position data
-                position_address = f"/tracking/trackers/{i}/position"
-                self.client.send_message(position_address, [x, y, z])
+            # Map landmark data to specific tracker IDs (1-8) and head tracker
+            landmark_list = list(body_data.items())
 
-                # Send rotation data (fixed values as requested)
-                rotation_address = f"/tracking/trackers/{i}/rotation"
-                self.client.send_message(rotation_address, [0.0, 0.0, 0.0])
+            # Send data for trackers 1-8
+            for tracker_id in range(1, 9):
+                if tracker_id - 1 < len(landmark_list):
+                    # Use landmark data for this tracker
+                    _landmark_name, (x, y, z) = landmark_list[tracker_id - 1]
+                    position_data = [x, y, z]
+                    rotation_data = [0.0, 0.0, 0.0, 1.0]  # Quaternion (x, y, z, w)
+                else:
+                    # Use default values if no landmark data available
+                    position_data = [0.0, 0.0, 0.0]
+                    rotation_data = [0.0, 0.0, 0.0, 1.0]
+
+                # Send position and rotation for each tracker
+                position_address = f"/tracking/trackers/{tracker_id}/position"
+                rotation_address = f"/tracking/trackers/{tracker_id}/rotation"
+
+                self.client.send_message(position_address, position_data)
+                self.client.send_message(rotation_address, rotation_data)
+
+            # Send head tracker data (use first landmark or nose if available)
+            if landmark_list:
+                # Use the first landmark (usually nose/head) for head tracking
+                _landmark_name, (x, y, z) = landmark_list[0]
+                head_position = [x, y, z]
+                head_rotation = [0.0, 0.0, 0.0, 1.0]
+            else:
+                head_position = [0.0, 0.0, 0.0]
+                head_rotation = [0.0, 0.0, 0.0, 1.0]
+
+            # Send head tracker data
+            head_position_address = "/tracking/trackers/head/position"
+            head_rotation_address = "/tracking/trackers/head/rotation"
+
+            self.client.send_message(head_position_address, head_position)
+            self.client.send_message(head_rotation_address, head_rotation)
 
             self.last_send_time = current_time
 
         except (OSError, RuntimeError) as e:
             click.echo(
                 f"Body tracking data transmission error: {e}",
+            )
+
+    def send_tracking_data(
+        self,
+        face_data: dict[str, float],
+        body_data: dict[str, tuple[float, float, float]] | None = None,
+    ) -> None:
+        """Send all tracking data using the new tracking format."""
+        current_time = time.time()
+        if current_time - self.last_send_time < self.send_interval:
+            return
+
+        try:
+            # Create synthetic body tracking data from face/hand data if no body data available
+            if body_data is None or len(body_data) == 0:
+                body_data = {}
+                # Use face data to create head tracking
+                if face_data:
+                    # Convert head pose data to position/rotation
+                    head_x = face_data.get("HeadTurnLeft", 0.0) - face_data.get(
+                        "HeadTurnRight",
+                        0.0,
+                    )
+                    head_y = face_data.get("HeadTiltUp", 0.0) - face_data.get("HeadTiltDown", 0.0)
+                    head_z = face_data.get("HeadTiltLeft", 0.0) - face_data.get(
+                        "HeadTiltRight",
+                        0.0,
+                    )
+                    body_data["Head"] = (head_x, head_y, head_z)
+
+                # Create placeholder data for other trackers
+                for i in range(8):
+                    if f"Tracker{i}" not in body_data:
+                        body_data[f"Tracker{i}"] = (0.0, 0.0, 0.0)
+
+            # Send body tracking data using the new format
+            self.send_body_tracking_data(body_data)
+
+            self.last_send_time = current_time
+
+        except (OSError, RuntimeError) as e:
+            click.echo(
+                f"Tracking data transmission error: {e}",
             )
 
     def send_custom_parameter(self, parameter_name: str, value: float) -> None:

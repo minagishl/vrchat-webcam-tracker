@@ -217,12 +217,8 @@ class SimpleTracker:
             smoothed_value = self.smoothers[param_name].smooth(value, param_name)
             smoothed_hand_data[param_name] = smoothed_value
 
-        # Send combined data to VRChat
-        self.osc_sender.send_combined_data(smoothed_face_data, smoothed_hand_data)
-
-        # Send body tracking data if available
-        if body_data:
-            self.osc_sender.send_body_tracking_data(body_data)
+        # Send all data using the new tracking format
+        self.osc_sender.send_tracking_data(smoothed_face_data, body_data)
 
         if self.debug:
             # Display all parameters being sent
